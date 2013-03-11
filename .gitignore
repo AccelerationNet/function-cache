@@ -1,0 +1,7 @@
+.svn
+build
+dist
+*~
+*#
+*.fasl
+*.pyc
