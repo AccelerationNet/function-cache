@@ -19,6 +19,25 @@
     (assert-eql 7 (thunk-tester))
     (assert-eql 1 *thunk-test-count*)))
 
+
+(defvar *single-cell-test-count* 0)
+(defcached (single-cell-tester
+            :cache-class 'single-cell-function-cache)
+    (a)
+  (incf *single-cell-test-count*)
+  a)
+
+(define-test single-cell-test
+  (let ((*single-cell-test-count* 0))
+    (clear-cache *single-cell-tester-cache*)
+    (single-cell-tester 2)
+    (assert-equal 2 (single-cell-tester 2))
+    (assert-equal 1 *single-cell-test-count*)
+    (single-cell-tester 3)
+    (assert-equal 3 (single-cell-tester 3))
+    (assert-equal 2 *single-cell-test-count*)
+    ))
+
 (defvar *hash-test-count* 0)
 (defcached fn0 (a0)
   (incf *hash-test-count*)

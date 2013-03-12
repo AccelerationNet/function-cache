@@ -6,15 +6,15 @@
   (:shadowing-import-from :alexandria :ensure-list )
   (:export
    #:defcached
-   #:defcached*
+   #:compute-cache-key
    #:defcached-hashkey
-   #:defcached-thunk
-   #:defcached-shared
+   #:get-cached-value
    #:clear-cache
    #:timeout
    #:cached-results
    #:clear-cache-all-function-caches
    #:*cache-names*
    #:hash-table-function-cache
-   #:shared-hash-table-function-cache
+   #:single-cell-function-cache
+   #:thunk-cache
    ))
