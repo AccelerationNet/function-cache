@@ -21,31 +21,35 @@
     the original function to be run, to set cached values
     and other cache configuration parameters"))
 
+(defmethod cached-results :around ((cache function-cache))
+  "Coerce the refernce to the results into something we can use"
+  (let ((result (call-next-method)))
+    (typecase result
+      (null nil)
+      (function (funcall result))
+      (symbol (cond ((boundp result) (symbol-value result))
+                    ((fboundp result) (funcall result))))
+      (t result))))
+
 (defclass thunk-cache (function-cache)
   ()
   (:documentation "a cache optimized for functions of no arguments"))
 
 (defclass hash-table-function-cache (function-cache)
-  #.(slot-defs '((hash-init-args '(:test equal :synchronized T))))
-  (:documentation "a function cache that uses its "))
-
-(defclass shared-hash-table-function-cache (hash-table-function-cache)
-  ()
-  (:documentation "A function that shares its cache-backing (eg: hash-table)
-    with other objects.  This will ensure that the function name is part of
-    the cache key "))
+  #.(slot-defs '((hash-init-args '(:test equal :synchronized T))
+                 (shared-results? nil)))
+  (:documentation "a function cache that uses a hash-table to store results"))
 
 (defmethod initialize-instance :after
-    ((cache hash-table-function-cache) &key &allow-other-keys)
+    ((cache function-cache) &key &allow-other-keys)
   (ensure-cache-backing cache))
 
 (defgeneric ensure-cache-backing (cache)
   (:documentation "ensures that cached-results has the expected init value")
   (:method ((cache function-cache)) t)
-  (:method ((cache shared-hash-table-function-cache)) t)
   (:method ((cache hash-table-function-cache))
-    (unless (cached-results cache)
-      (setf (cached-results cache)
+    (unless (slot-value cache 'cached-results)
+      (setf (slot-value cache 'cached-results)
             (apply #'make-hash-table (hash-init-args cache))))))
 
 (defgeneric expired? ( cache result-timeout )
@@ -65,11 +69,6 @@
 (defgeneric get-cached-value (cache cache-key)
   (:documentation "returns the result-values-list and at what time it was cached")
   (:method ((cache hash-table-function-cache) cache-key)
-    (let* ((cons (gethash cache-key (cached-results cache)))
-           (res (car cons))
-           (cached-at (cdr cons)))
-      (values res cached-at)))
-  (:method ((cache shared-hash-table-function-cache) cache-key)
     ;; if we get no hash when we expect one then it probably means
     ;; that we should just run tthe body (eg: http-context cached results
     ;; a valid http context)
@@ -87,9 +86,6 @@
 (defgeneric (setf get-cached-value) (new cache cache-key)
   (:documentation "Set the cached value for the cache key")
   (:method (new (cache hash-table-function-cache) cache-key)
-    (setf (gethash cache-key (cached-results cache))
-          (cons new (get-universal-time))))
-  (:method (new (cache shared-hash-table-function-cache) cache-key)
     ;; without our shared hash, we cannot cache
     (let ((hash (cached-results cache)))
       (when hash
@@ -114,10 +110,11 @@
   (:documentation "Used to assemble cache keys for function-cache objects")
   (:method ((cache function-cache) thing)
     (defcached-hashkey thing))
-  (:method ((cache shared-hash-table-function-cache) thing)
-    (list*
-     (name cache)
-     (ensure-list (defcached-hashkey thing)))))
+  (:method ((cache hash-table-function-cache) thing)
+    (let ((rest (ensure-list (defcached-hashkey thing))))
+      (if (shared-results? cache)
+          (list* (name cache) rest)
+          rest))))
 
 (defgeneric cacher (cache args)
   (:documentation "A function that takes a cache object and an arg list
@@ -136,21 +133,32 @@
 (defvar *cache-names* nil
   "A list of all function-caches")
 
-(defgeneric clear-cache (cache)
+(defgeneric clear-cache (cache &optional args)
   (:documentation "Clears a given cache")
-  (:method ((cache function-cache))
+  (:method ((cache function-cache) &optional args)
+    (declare (ignore args))
     (setf (cached-results cache) nil))
-  (:method ((cache hash-table-function-cache))
-    (setf (cached-results cache) nil)
-    (ensure-cache-backing cache))
-  (:method ((cache shared-hash-table-function-cache)
-            &aux (name (name cache)) (hash (cached-results cache)))
+  (:method ((cache hash-table-function-cache)
+            &optional (args nil args-input?)
+            &aux
+            (name (name cache))
+            (hash (cached-results cache))
+            (shared-results? (shared-results? cache)))
+    ;; there was no cache, so there can be no results to clear
     (when hash
-      (iter (for (key value) in-hashtable hash)
-        (when (eql name (first key))
-          (collect key into keys-to-rem))
-        (finally (iter (for key in keys-to-rem)
-                   (remhash key hash)))))))
+      (cond (args-input?
+             (remhash (compute-cashe-key cache args) hash))
+            ((not shared-results?)
+             ;; clear the whole hash, as they didnt specify args and
+             ;; it doesnt share storage
+             (clrhash hash))
+            ;; we need to sort out which keys to remove based on our name
+            (shared-results?
+             (iter (for (key value) in-hashtable hash)
+               (when (eql name (first key))
+                 (collect key into keys-to-rem))
+               (finally (iter (for key in keys-to-rem)
+                          (remhash key hash)))))))))
 
 (defun clear-cache-all-function-caches (&optional package)
   (when package (setf package (find-package package)))
@@ -162,50 +170,48 @@
 (defun %cache-var-name (symbol)
   (symbol-munger:english->lisp-symbol #?"*${ symbol }-cache*"))
 
-(defun %defcached-base-forms (symbol lambda-list body
-                              &key (cache-class 'hash-table-function-cache)
-                              cache-init-args)
-  (multiple-value-bind (args optional rest keys)
-      (alexandria:parse-ordinary-lambda-list lambda-list)
-    (let* ((cache (%cache-var-name symbol))
-           (doc (when (stringp (first body)) (first body)))
-           (call-list (append args
-                              (mapcar #'first optional)
-                              (mapcan #'first keys)
-                              ))
-           (call-list (if rest
-                          `(list* ,@call-list ,rest)
-                          `(list ,@call-list))))
-      `(progn
-        (defvar ,cache nil)
-        (pushnew ',cache *cache-names*)
-        (setf ,cache
-         (make-instance ',cache-class
-          :body-fn (lambda ,lambda-list ,@body)
-          :name ',symbol
-          :lambda-list ',lambda-list
-          ,@cache-init-args))
-        (defun ,symbol ,lambda-list
-          ,doc
-          (cacher ,cache ,call-list))))))
+(defgeneric default-cache-class (symbol lambda-list &key cache-class)
+  (:method (symbol lambda-list &key cache-class)
+    (cond
+      (cache-class cache-class)
+      ((null lambda-list) 'thunk-cache)
+      (t 'hash-table-function-cache))))
 
-(defmacro defcached-thunk (symbol lambda-list &body body)
-  "Creates a thunk-cache for a given function definition"
-  (assert (null lambda-list))
-  (%defcached-base-forms
-   symbol lambda-list body
-   :cache-class 'thunk-cache))
-
-(defmacro defcached-shared (symbol lambda-list &body body)
-  "Creates a shared-function-cache (mostly used for eg: web-request-context cached objects)"
-  (%defcached-base-forms
-   symbol lambda-list body
-   :cache-class 'shared-hash-table-function-cache))
+(defun %defcached-base-forms (symbol lambda-list body)
+  (destructuring-bind (fn-name &key cache-class table timeout
+                               (shared-results? nil shared-result-input?))
+      (ensure-list symbol)
+    (when (and table (not shared-result-input?))  (setf shared-results? t))
+    (multiple-value-bind (args optional rest keys)
+        (alexandria:parse-ordinary-lambda-list lambda-list)
+      (let* ((cache-class (default-cache-class symbol lambda-list :cache-class cache-class))
+             (cache (%cache-var-name fn-name))
+             (doc (when (stringp (first body)) (first body)))
+             (call-list (append args
+                                (mapcar #'first optional)
+                                (mapcan #'first keys)
+                                ))
+             (call-list (if rest
+                            `(list* ,@call-list ,rest)
+                            `(list ,@call-list))))
+        `(progn
+          (defvar ,cache nil)
+          (pushnew ',cache *cache-names*)
+          (setf ,cache
+           (make-instance ',cache-class
+            :body-fn (lambda ,lambda-list ,@body)
+            :name ',fn-name
+            :lambda-list ',lambda-list
+            :timeout ,timeout
+            :shared-results? ,shared-results?
+            :cached-results ,table))
+          (defun ,fn-name ,lambda-list
+            ,doc
+            (cacher ,cache ,call-list)))))))
 
 (defmacro defcached (symbol lambda-list &body body)
-  (%defcached-base-forms
-   symbol lambda-list body
-   :cache-class 'hash-table-function-cache))
+  (%defcached-base-forms symbol lambda-list body))
+
 #|
 
 (defmacro defcached (symbol lambda-list &body fnbody)

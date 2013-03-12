@@ -7,7 +7,7 @@
    (run-tests :all)))
 
 (defvar *thunk-test-count* 0)
-(defcached-thunk thunk-tester ()
+(defcached thunk-tester ()
   (incf *thunk-test-count*)
   7)
 
@@ -58,19 +58,17 @@
   (defparameter *shared-count* 0)
   (defparameter *shared0-count* 0)
   (defparameter *shared1-count* 0)
-  (defcached-shared shared0-test (a &rest them)
+  (defcached (shared0-test :table *shared-cache*)
+      (a &rest them)
     (incf *shared-count*)
     (incf *shared0-count*)
     (cons a them))
 
-  (defcached-shared shared1-test (a &rest them)
+  (defcached (shared1-test :table *shared-cache*)
+      (a &rest them)
     (incf *shared-count*)
     (incf *shared1-count*)
-    (cons a them))
-
-  (setf
-   (cached-results *shared0-test-cache*) *shared-cache*
-   (cached-results *shared1-test-cache*) *shared-cache*))
+    (cons a them)))
 
 (define-test shared-test
   (let ((*shared-count* 0)
@@ -91,4 +89,45 @@
     (assert-eql 1 *shared0-count*)
     (assert-eql 1 *shared1-count*)
     (assert-eql 2 *shared-count*)
+    ))
+
+(progn
+  (defparameter *opt-cache* (make-hash-table :test 'equal :synchronized t))
+  (defun get-opt-cache () *opt-cache*)
+  (defparameter *opt-count* 0)
+  (defparameter *opt0-count* 0)
+  (defparameter *opt1-count* 0)
+  (defcached (opt0-test :table '*opt-cache*)
+      (a &rest them)
+    (incf *opt-count*)
+    (incf *opt0-count*)
+    (cons a them))
+
+  (defcached (opt1-test :table #'get-opt-cache)
+      (a &rest them)
+    (incf *opt-count*)
+    (incf *opt1-count*)
+    (cons a them)))
+
+(define-test optional-shared-test
+  (let ((*opt-count* 0)
+        (*opt0-count* 0)
+        (*opt1-count* 0))
+    (clear-cache *opt0-test-cache*)
+    (clear-cache *opt1-test-cache*)
+    (opt0-test 1 2 3)
+    (opt0-test 1 2 3)
+    ;; block cache
+    (let (*opt-cache*) (opt0-test 1 2 3))
+    (assert-equal '(1 2 3) (opt0-test 1 2 3))
+    (assert-eql 2 *opt0-count*)
+    (assert-eql 0 *opt1-count*)
+    (assert-eql 2 *opt-count*)
+    (opt1-test 1 2 3)
+    ;; block cache
+    (let (*opt-cache*) (opt1-test 1 2 3))
+    (assert-equal '(1 2 3) (opt1-test 1 2 3))
+    (assert-eql 2 *opt0-count*)
+    (assert-eql 2 *opt1-count*)
+    (assert-eql 4 *opt-count*)
     ))
