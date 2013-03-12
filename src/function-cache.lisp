@@ -150,6 +150,8 @@
 
 (defgeneric clear-cache (cache &optional args)
   (:documentation "Clears a given cache")
+  (:method ((cache symbol) &optional args)
+    (clear-cache (find cache *cache-names* :key #'name) args))
   (:method ((cache function-cache) &optional args)
     (declare (ignore args))
     (setf (cached-results cache) nil))
@@ -159,6 +161,7 @@
             (name (name cache))
             (hash (cached-results cache))
             (shared-results? (shared-results? cache)))
+    (setf args (ensure-list args))
     ;; there was no cache, so there can be no results to clear
     (when hash
       (cond (args-input?
