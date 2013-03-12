@@ -1,22 +1,13 @@
 (in-package :function-cache)
 (cl-interpol:enable-interpol-syntax)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun slot-def (sym &optional initform &rest slot-args)
-    "given symbol, make a standard slot def for it
-   intended for read-time-eval
-   "
-    `(,sym :accessor ,sym :initform ,initform
-      :initarg ,(symbol-munger:lisp->keyword sym) ,@slot-args))
-
-  (defun slot-defs (syms)
-    "handle a list of slotdefs
-   intended for read-time-eval"
-    (iter (for args in (ensure-list syms))
-      (collect (apply #'slot-def (ensure-list args))))))
-
 (defclass function-cache ()
-  #.(slot-defs '(cached-results timeout body-fn name lambda-list))
+  ((cached-results :accessor cached-results :initform nil :initarg
+                   :cached-results)
+   (timeout :accessor timeout :initform nil :initarg :timeout)
+   (body-fn :accessor body-fn :initform nil :initarg :body-fn)
+   (name :accessor name :initform nil :initarg :name)
+   (lambda-list :accessor lambda-list :initform nil :initarg :lambda-list))
   (:documentation "an object that contains the cached results of function calls
     the original function to be run, to set cached values
     and other cache configuration parameters"))
@@ -36,8 +27,10 @@
   (:documentation "a cache optimized for functions of no arguments"))
 
 (defclass hash-table-function-cache (function-cache)
-  #.(slot-defs '((hash-init-args '(:test equal :synchronized T))
-                 (shared-results? nil)))
+  ((hash-init-args :accessor hash-init-args :initform
+                   '(:test equal :synchronized t) :initarg :hash-init-args)
+   (shared-results? :accessor shared-results? :initform nil :initarg
+                    :shared-results?))
   (:documentation "a function cache that uses a hash-table to store results"))
 
 (defmethod initialize-instance :after
