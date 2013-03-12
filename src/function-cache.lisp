@@ -148,10 +148,22 @@
 (defvar *cache-names* nil
   "A list of all function-caches")
 
+(defun find-function-cache-for-name (cache-name)
+  (iter (for name in *cache-names*)
+    (for obj = (symbol-value name))
+    (when (eql (name obj) cache-name)
+      (return obj))))
+
 (defgeneric clear-cache (cache &optional args)
   (:documentation "Clears a given cache")
-  (:method ((cache symbol) &optional args)
-    (clear-cache (find cache *cache-names* :key #'name) args))
+  (:method ((cache-name symbol) &optional (args nil args-input?))
+    (let ((obj (find-function-cache-for-name cache-name)))
+      ;; only call with args if we called this with args
+      ;; otherwise there is no determination between (eg: &rest called with nil args
+      ;; and not calling with args)
+      (if args-input?
+        (clear-cache obj args)
+        (clear-cache obj))))
   (:method ((cache function-cache) &optional args)
     (declare (ignore args))
     (setf (cached-results cache) nil))

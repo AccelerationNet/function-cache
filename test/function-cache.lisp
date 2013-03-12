@@ -118,6 +118,13 @@
     (clear-cache *shared1-test-cache*)
     (shared0-test 1 2 3)
     (shared0-test 2 3 4)
+    (assert-eql 2 (hash-table-count *shared-cache*))
+    (clear-cache 'shared0-test)
+    (assert-eql 0 (hash-table-count *shared-cache*)
+                :should-have-removed-the-final-entry
+                *shared-cache*)
+    (shared0-test 1 2 3)
+    (shared0-test 2 3 4)
     (shared1-test 1 2 3)
     (shared1-test 2 3 4)
     (assert-eql 4 (hash-table-count *shared-cache*))
@@ -125,8 +132,10 @@
     (assert-eql 2 (hash-table-count *shared-cache*))
     (clear-cache *shared0-test-cache* (list 2 3 4))
     (assert-eql 1 (hash-table-count *shared-cache*))
-    (clear-cache *shared0-test-cache*)
-    (assert-eql 0 (hash-table-count *shared-cache*))
+    (clear-cache 'shared0-test)
+    (assert-eql 0 (hash-table-count *shared-cache*)
+                :should-have-removed-the-final-entry
+                *shared-cache*)
     ))
 
 (progn
