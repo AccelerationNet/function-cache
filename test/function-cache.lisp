@@ -110,6 +110,25 @@
     (assert-eql 2 *shared-count*)
     ))
 
+(define-test shared-clear-test
+  (let ((*shared-count* 0)
+        (*shared0-count* 0)
+        (*shared1-count* 0))
+    (clear-cache *shared0-test-cache*)
+    (clear-cache *shared1-test-cache*)
+    (shared0-test 1 2 3)
+    (shared0-test 2 3 4)
+    (shared1-test 1 2 3)
+    (shared1-test 2 3 4)
+    (assert-eql 4 (hash-table-count *shared-cache*))
+    (clear-cache *shared1-test-cache*)
+    (assert-eql 2 (hash-table-count *shared-cache*))
+    (clear-cache *shared0-test-cache* (list 2 3 4))
+    (assert-eql 1 (hash-table-count *shared-cache*))
+    (clear-cache *shared0-test-cache*)
+    (assert-eql 0 (hash-table-count *shared-cache*))
+    ))
+
 (progn
   (defparameter *opt-cache* (make-hash-table :test 'equal :synchronized t))
   (defun get-opt-cache () *opt-cache*)
@@ -150,3 +169,4 @@
     (assert-eql 2 *opt1-count*)
     (assert-eql 4 *opt-count*)
     ))
+
