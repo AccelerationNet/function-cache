@@ -131,6 +131,12 @@
           (list* (name cache) rest)
           rest))))
 
+(defun %insert-into-cache (cache args &key (cache-key (compute-cashe-key cache args)))
+  "Simple helper to run the body, store the results in the cache and then return them"
+  (let ((results (multiple-value-list (apply (body-fn cache) args))))
+    (setf (get-cached-value cache cache-key) results)
+    (apply #'values results)))
+
 (defgeneric cacher (cache args)
   (:documentation "A function that takes a cache object and an arg list
     and either runs the computation and fills the caches or retrieves
@@ -140,9 +146,7 @@
     (multiple-value-bind (cached-res cached-at)
         (get-cached-value cache cache-key)
       (if (or (null cached-at) (expired? cache cached-at))
-          (let ((results (multiple-value-list (apply (body-fn cache) args))))
-            (setf (get-cached-value cache cache-key) results)
-            (apply #'values results))
+          (%insert-into-cache cache args)
           (apply #'values cached-res)))))
 
 (defvar *cache-names* nil
@@ -225,8 +229,6 @@
     (when hash
       (iter (for (key value) in-hashtable hash)
         (for (rtn . cached-at) = value)
-        (adwutils:spy-break (get-universal-time) cached-at (expired? cache cached-at)
-                            )
         (when (expired? cache cached-at)
           (collect key into to-remove))
         (finally (iter (for rem in to-remove)
