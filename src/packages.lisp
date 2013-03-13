@@ -10,6 +10,7 @@
    #:defcached-hashkey
    #:get-cached-value
    #:clear-cache
+   #:purge-cache
    #:timeout
    #:cached-results
    #:clear-cache-all-function-caches

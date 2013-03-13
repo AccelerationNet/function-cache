@@ -179,3 +179,27 @@
     (assert-eql 4 *opt-count*)
     ))
 
+(defparameter *purge-count* 0)
+(defcached (purge-test :timeout 1) (&rest them)
+  (incf *purge-count*)
+  them)
+
+(define-test purge-test
+  (let ((*purge-count* 0))
+    (clear-cache 'purge-test)
+    (purge-test 1 2 3)
+    (assert-equal '(1 2 3) (purge-test 1 2 3))
+    (assert-eql *purge-count* 1)
+    (sleep 1.5)
+    (assert-equal 1 (hash-table-count (cached-results *purge-test-cache*)))
+    (purge-cache 'purge-test)
+    (assert-equal 0 (hash-table-count (cached-results *purge-test-cache*)))
+    (purge-test 1 2 3)
+    (purge-test 1 2 3)
+    (assert-equal '(1 2 3) (purge-test 1 2 3))
+    (assert-eql *purge-count* 2)
+    (sleep 1.5)
+    (assert-equal 1 (hash-table-count (cached-results *purge-test-cache*)))
+    (purge-cache *purge-test-cache*)
+    (assert-equal 0 (hash-table-count (cached-results *purge-test-cache*)))))
+

@@ -68,7 +68,7 @@
         ((null result-timeout) t)
         ;; we have timeouts and times to compare, are we past expiration
         (t (let ((expires-at (+ timeout result-timeout)))
-             (< expires-at (get-universal-time))))
+             (<= expires-at (get-universal-time))))
         ))))
 
 (defgeneric get-cached-value (cache cache-key)
@@ -190,12 +190,52 @@
                (finally (iter (for key in keys-to-rem)
                           (remhash key hash)))))))))
 
-(defun clear-cache-all-function-caches (&optional package)
+(defun do-caches (fn &key package)
+  "Iterate through caches calling fn on each matching cache"
   (when package (setf package (find-package package)))
   (iter (for n in *cache-names*)
-    (when (or (null package)
-              (eql (symbol-package n) package))
-      (clear-cache (symbol-value n)))))
+    (when (or (null package) (eql (symbol-package n) package))
+      (funcall fn (symbol-value n)))))
+
+(defun clear-cache-all-function-caches (&optional package)
+  "Clear all the packages we know about. If there is a package mentioned,
+   clear only those caches whose names are in that package"
+  (do-caches #'clear-cache :package package))
+
+(defgeneric purge-cache (cache)
+  (:documentation "A function that will remove expired entries from the cache,
+  allowing them to be garbage collected")
+  ;; only actually purge if there is the possibility of removing entries
+  (:method :around ((cache function-cache))
+    (when (timeout cache)
+      (call-next-method)))
+  (:method ((cache-name symbol))
+    (purge-cache (find-function-cache-for-name cache-name)))
+  (:method ((cache single-cell-function-cache))
+    (let* ((res (cached-results cache))
+           (cached-at (cddr res)))
+      (when (expired? cache cached-at)
+        (clear-cache cache))))
+  (:method ((cache thunk-cache))
+    (let* ((cached-at (cdr (cached-results cache))))
+      (when (expired? cache cached-at)
+        (clear-cache cache))))
+  (:method ((cache hash-table-function-cache)
+            &aux (hash (cached-results cache)))
+    (when hash
+      (iter (for (key value) in-hashtable hash)
+        (for (rtn . cached-at) = value)
+        (adwutils:spy-break (get-universal-time) cached-at (expired? cache cached-at)
+                            )
+        (when (expired? cache cached-at)
+          (collect key into to-remove))
+        (finally (iter (for rem in to-remove)
+                   (remhash rem hash)))))))
+
+(defun purge-all-caches (&optional package)
+  "Call purge on all matching cache objects.  If package is provided, purge
+   only caches located within that package"
+  (do-caches #'purge-cache :package package))
 
 (defun %ensure-unquoted (thing)
   (etypecase thing
@@ -217,27 +257,30 @@
         (t 'hash-table-function-cache)))))
 
 (defun %call-list-for-lambda-list (lambda-list)
+  "Turns a lambda list into a list that can be applied to functions of that lambda list"
   (multiple-value-bind (args optional rest keys)
       (alexandria:parse-ordinary-lambda-list lambda-list)
     (let* ((call-list (append args
                               (mapcar #'first optional)
                               (mapcan #'first keys)
                               ))
-           (call-list (if rest
-                          `(list* ,@call-list ,rest)
-                          `(list ,@call-list))))
+           (call-list (cond
+                        ((and call-list rest)
+                         `(list* ,@call-list ,rest))
+                        (call-list `(list ,@call-list))
+                        (rest rest))))
       call-list)))
 
 (defmacro defcached (symbol lambda-list &body body)
   "Creates a cached function named SYMBOL and a cache object named *{FN-NAME}-CACHE*
-   SYMBOL can also be a list (FN-NAME &rest cache-init-args
+   SYMBOL can also be a list (FN-NAME &rest CACHE-INIT-ARGS
                            &key CACHE-CLASS TABLE TIMEOUT SHARED-RESULTS?)
 
-   CACHE-CLASS - controls what cache class will be instantiated (uses
-     default-cache-class if not provided)
    TABLE - a shared cache-store to use, usually a hash-table, a function that returns
      a hashtable, or a symbol whose value is a hash-table
    TIMEOUT - how long entries in the cache should be considered valid for
+   CACHE-CLASS - controls what cache class will be instantiated (uses
+     default-cache-class if not provided)
    SHARED-RESULTS? - do we expect that we are sharing cache space with other things
      defaults to t if TABLE is provided
    CACHE-INIT-ARGS - any other args that should be passed to the cache
