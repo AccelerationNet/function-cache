@@ -1,6 +1,11 @@
 (in-package :function-cache)
 (cl-interpol:enable-interpol-syntax)
 
+;;;; TODO, ideas: Purger threads, MRU heap cache,
+;;;; refreshable caches (need to store actual args as well (instead of just
+;;;; cache key), which has storage implications)
+
+
 (defclass function-cache ()
   ((cached-results :accessor cached-results :initform nil :initarg
                    :cached-results)
