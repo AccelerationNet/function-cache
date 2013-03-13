@@ -9,6 +9,10 @@ based on arguments (memoization).
  * Supports other cache structures (eg: optimization for thunks, mru-heaps)
  * Supports optional caching for functions that are called in transient
    cache contexts (eg: http-context, web application session etc)
+ * Supports timeouts to invalidate caches, and purging of expired
+   cached results
+ * A more robust cache clearing scheme, clear all caches, all caches
+   in a package, or just a specific cache
 
 ## API
 
