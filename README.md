@@ -18,7 +18,7 @@ based on arguments (memoization).
 
 ### DEFCACHED 
 
-Creates a cached function named SYMBOL and a cache object named *{FN-NAME}-CACHE*
+Creates a cached function named SYMBOL and a cache object named `*{FN-NAME}-CACHE*`
 SYMBOL can also be a list (FN-NAME &rest cache-init-args
                            &key CACHE-CLASS TABLE TIMEOUT SHARED-RESULTS?)
 
@@ -26,11 +26,11 @@ CACHE-CLASS - controls what cache class will be instantiated (uses
    default-cache-class if not provided)
 TABLE - a shared cache-store to use, usually a hash-table, a function that returns
    a hashtable, or a symbol whose value is a hash-table
-TIMEOUT - how long entries in the cache should be considered valid for
+TIMEOUT - how long entries in the cache should be considered valid for, in seconds
 SHARED-RESULTS? - do we expect that we are sharing cache space with other things
    defaults to t if TABLE is provided
 
-```
+```lisp
 (defcached symbol (lambda-list) ...)
 (defcached (symbol &key table cache-class timeout shared-results?) (lambda-list) ...)
 EG:
@@ -71,7 +71,7 @@ and retrieve values from whatever backing store the cache is using
 Returns (values results cached-at) and stores the results of executing
 the underlying function.
 
-### compute-cashe-key, defcached-hashkey
+### compute-cache-key, defcached-hashkey
 
 Compute-cache-key, takes a cache and a list of arguments and turns
 those into a valid cache-key for the cache, by calling
@@ -86,17 +86,18 @@ Cacher is responsible for looking up memoized results in the cache,
 checking if they are expired/missing and running the body if so,
 caching and returning the result
 
-### *cache-names* 
+### \*cache-names\*
 
 A list of all the special variables created by defcached.  Used to
 ease clearing all the caches, and for introspective purposes.
 
 
 ## Authors
- * [http://www.acceleration.net/ Acceleration.net] - [http://www.acceleration.net/programming/donate-to-acceleration-net/ Donate]
- ** [http://russ.unwashedmeme.com/blog Russ Tyndall]
- ** [http://the.unwashedmeme.com/blog Nathan Bird]
- ** [http://ryepup.unwashedmeme.com/blog Ryan Davis]
+
+ * [Acceleration.net](http://www.acceleration.net/)
+  * [Russ Tyndall](http://russ.unwashedmeme.com/blog)
+  * [Nathan Bird](http://the.unwashedmeme.com/blog)
+  * [Ryan Davis](http://ryepup.unwashedmeme.com/blog)
 
 ```
 ;; Copyright (c) 2013 Russ Tyndall , Acceleration.net http://www.acceleration.net
