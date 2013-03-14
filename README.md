@@ -71,6 +71,15 @@ and retrieve values from whatever backing store the cache is using
 Returns (values results cached-at) and stores the results of executing
 the underlying function.
 
+### purge-cache, purge-all-caches
+
+A function that will remove expired entries from the cache, allowing
+them to be garbage collected
+
+### clear-cache, clear-all-caches
+
+A function that will remove all cached results from the cache
+
 ### compute-cache-key, defcached-hashkey
 
 Compute-cache-key, takes a cache and a list of arguments and turns
@@ -89,7 +98,7 @@ caching and returning the result
 ### \*cache-names\*
 
 A list of all the special variables created by defcached.  Used to
-ease clearing all the caches, and for introspective purposes.
+ease clearing/purging all the caches, and for introspective purposes.
 
 
 ## Authors
