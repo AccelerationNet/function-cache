@@ -19,6 +19,14 @@
     to be abstract with hash-table-function-cache, and thunk-cache being the
     current concrete classes"))
 
+(defmethod print-object ((o function-cache) s)
+  "Print the auto-print-items for this instance."
+  (print-unreadable-object (o s :type t :identity t)
+    (ignore-errors
+     (iter (for c in '(name))
+       (for v = (ignore-errors (funcall c o)))
+       (when v (format s "~A:~S " c v))))))
+
 (defmethod cached-results :around ((cache function-cache))
   "Coerce the refernce to the results into something we can use"
   (let ((result (call-next-method)))
