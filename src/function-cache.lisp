@@ -47,9 +47,16 @@
   (:documentation "a cache that stores only the most recent result of running
      the body"))
 
+(defvar *default-hash-init-args*
+  `(:test equal
+    #+sbcl ,@'(:synchronized t)
+    ))
+
 (defclass hash-table-function-cache (function-cache)
-  ((hash-init-args :accessor hash-init-args :initform
-                   '(:test equal :synchronized t) :initarg :hash-init-args)
+  ((hash-init-args
+    :accessor hash-init-args
+    :initform *default-hash-init-args*
+    :initarg :hash-init-args)
    (shared-results? :accessor shared-results? :initform nil :initarg
                     :shared-results?))
   (:documentation "a function cache that uses a hash-table to store results"))
