@@ -22,12 +22,12 @@ Creates a cached function named SYMBOL and a cache object named `*{FN-NAME}-CACH
 SYMBOL can also be a list (FN-NAME &rest cache-init-args
                            &key CACHE-CLASS TABLE TIMEOUT SHARED-RESULTS?)
 
-CACHE-CLASS - controls what cache class will be instantiated (uses
+ * CACHE-CLASS - controls what cache class will be instantiated (uses
    default-cache-class if not provided)
-TABLE - a shared cache-store to use, usually a hash-table, a function that returns
+ * TABLE - a shared cache-store to use, usually a hash-table, a function that returns
    a hashtable, or a symbol whose value is a hash-table
-TIMEOUT - how long entries in the cache should be considered valid for, in seconds
-SHARED-RESULTS? - do we expect that we are sharing cache space with other things
+ * TIMEOUT - how long entries in the cache should be considered valid for, in seconds
+ * SHARED-RESULTS? - do we expect that we are sharing cache space with other things
    defaults to t if TABLE is provided
 
 ```lisp
