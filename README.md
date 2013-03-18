@@ -1,7 +1,7 @@
 # function-cache 
 
 A common lisp library that provides extensible function result caching
-based on arguments (memoization).
+based on arguments (an expanded form of memoization).
 
 ## Differences from fare-memoization
 
