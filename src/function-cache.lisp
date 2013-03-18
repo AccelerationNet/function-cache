@@ -134,7 +134,7 @@
               (collect (defcached-hashkey i))))
       (t thing))))
 
-(defgeneric compute-cashe-key (cache thing)
+(defgeneric compute-cache-key (cache thing)
   (:documentation "Used to assemble cache keys for function-cache objects")
   (:method ((cache function-cache) thing)
     (defcached-hashkey thing))
@@ -144,7 +144,7 @@
           (list* (name cache) rest)
           rest))))
 
-(defun %insert-into-cache (cache args &key (cache-key (compute-cashe-key cache args)))
+(defun %insert-into-cache (cache args &key (cache-key (compute-cache-key cache args)))
   "Simple helper to run the body, store the results in the cache and then return them"
   (let ((results (multiple-value-list (apply (body-fn cache) args))))
     (setf (get-cached-value cache cache-key) results)
@@ -155,7 +155,7 @@
     and either runs the computation and fills the caches or retrieves
     the cached value")
   (:method ((cache function-cache) args
-            &aux (cache-key (compute-cashe-key cache args)))
+            &aux (cache-key (compute-cache-key cache args)))
     (multiple-value-bind (cached-res cached-at)
         (get-cached-value cache cache-key)
       (if (or (null cached-at) (expired? cache cached-at))
@@ -194,7 +194,7 @@
     ;; there was no cache, so there can be no results to clear
     (when hash
       (cond (args-input?
-             (remhash (compute-cashe-key cache args) hash))
+             (remhash (compute-cache-key cache args) hash))
             ((not shared-results?)
              ;; clear the whole hash, as they didnt specify args and
              ;; it doesnt share storage
