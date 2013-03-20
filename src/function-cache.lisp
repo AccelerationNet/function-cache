@@ -12,7 +12,9 @@
    (timeout :accessor timeout :initform nil :initarg :timeout)
    (body-fn :accessor body-fn :initform nil :initarg :body-fn)
    (name :accessor name :initform nil :initarg :name)
-   (lambda-list :accessor lambda-list :initform nil :initarg :lambda-list))
+   (lambda-list :accessor lambda-list :initform nil :initarg :lambda-list)
+   (shared-results? :accessor shared-results? :initform nil :initarg
+                    :shared-results?))
   (:documentation "an object that contains the cached results of function calls
     the original function to be run, to set cached values
     and other cache configuration parameters.  This class is mostly intended
@@ -56,9 +58,7 @@
   ((hash-init-args
     :accessor hash-init-args
     :initform *default-hash-init-args*
-    :initarg :hash-init-args)
-   (shared-results? :accessor shared-results? :initform nil :initarg
-                    :shared-results?))
+    :initarg :hash-init-args))
   (:documentation "a function cache that uses a hash-table to store results"))
 
 (defmethod initialize-instance :after
@@ -144,8 +144,6 @@
 (defgeneric compute-cache-key (cache thing)
   (:documentation "Used to assemble cache keys for function-cache objects")
   (:method ((cache function-cache) thing)
-    (defcached-hashkey thing))
-  (:method ((cache hash-table-function-cache) thing)
     (let ((rest (ensure-list (defcached-hashkey thing))))
       (if (shared-results? cache)
           (list* (name cache) rest)
