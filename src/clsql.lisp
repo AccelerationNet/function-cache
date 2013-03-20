@@ -7,4 +7,4 @@
   (clsql-sys:sql attr))
 
 (defmethod function-cache:defcached-hashkey ((o clsql-sys:standard-db-object))
-  (clsql-sys:sql (primary-key-where-clauses o)))
+  (clsql-sys:sql (clsql-helper:primary-key-where-clauses o)))
