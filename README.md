@@ -80,6 +80,29 @@ them to be garbage collected
 
 A function that will remove all cached results from the cache
 
+#### clear-cache-partial-arguments
+
+This function will go through the cached-results removing
+keys that partially match the to-match list.
+
+This is used to clear the cache of shared? caches, but is also useful
+in other cases, where we need to clear cache for some subset of the
+arguments (eg: a cached funcall might wish to clear the cache of a
+specific funcalled function).
+
+Matches arguments for those provided. Anything not provided is
+considered function-cache:dont-care.  Anything specified as
+function-cache:dont-care is not used to determine if there is a match
+
+uses partial-argument-match? to determine if the key should be removed
+
+#### partial-argument-match?
+Trys to see if the cache-key matches the to-match partial
+key passed in.
+
+The basic implementation is to go through the cache-keys and match in
+order, skipping to-match component that is function-cache:dont-care
+
 ### compute-cache-key, defcached-hashkey
 
 Compute-cache-key, takes a cache and a list of arguments and turns

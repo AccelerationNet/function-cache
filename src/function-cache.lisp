@@ -171,10 +171,69 @@
   "A list of all function-caches")
 
 (defun find-function-cache-for-name (cache-name)
+  "given a name get the cache object associated with it"
   (iter (for name in *cache-names*)
     (for obj = (symbol-value name))
-    (when (eql (name obj) cache-name)
+    (when (or (eql name cache-name) ;; check the cache name
+              (eql (name obj) cache-name)) ;; check the fn name
       (return obj))))
+
+(defgeneric cached-results-count (cache)
+  (:documentation "A function to compute the number of results that have been
+   cached. DOES NOT CHECK to see if the entries are expired")
+  (:method ((hash hash-table))
+    (hash-table-count hash))
+  (:method ((res list))
+    (length res))
+  (:method ((cache function-cache))
+    (cached-results-count (cached-results cache)))
+  (:method ((cache single-cell-function-cache))
+    (if (cdr (cached-results cache)) 1 0))
+  (:method ((cache thunk-cache))
+    (if (cddr (cached-results cache)) 1 0)))
+
+(defgeneric partial-argument-match? (cache cached-key to-match
+                                     &key test)
+  (:documentation "Trys to see if the cache-key matches the to-match partial
+   key passed in.
+
+   The basic implementation is to go through the cache-keys and match in
+   order, skipping to-match component that is function-cache:dont-care")
+  (:method ((cache hash-table-function-cache) cached-key to-match
+            &key (test (let ((hash (cached-results cache)))
+                         (when hash (hash-table-test hash)))))
+    (when test
+      (setf to-match (alexandria:ensure-list to-match))
+      (iter
+        (for k in cached-key)
+        (for m = (or (pop to-match) 'dont-care))
+        (unless (eql m 'dont-care)
+          ;; TODO: should this recursivly call if k is a list?
+          (always (funcall test k m)))
+        (while to-match)))))
+
+(defgeneric clear-cache-partial-arguments (cache to-match)
+  (:documentation "This function will go through the cached-results removing
+    keys that partially match the to-match list.
+
+    This is used to clear the cache of shared? caches, but is also useful in
+    other cases, where we need to clear cache for some subset of the
+    arguments (eg: a cached funcall might wish to clear the cache of a
+    specific funcalled function).
+
+    Matches arguments for those provided. Anything not provided is considered
+    function-cache:dont-care.  Anything specified as function-cache:dont-care
+    is not used to determine if there is a match
+   ")
+  (:method ((cache hash-table-function-cache) to-match)
+    (let* ((hash (cached-results cache))
+           (test (when hash (hash-table-test hash))))
+      (setf to-match (alexandria:ensure-list to-match))
+      (iter (for (key value) in-hashtable hash)
+        (when (partial-argument-match? cache key to-match :test test)
+          (collect key into keys-to-rem))
+        (finally (iter (for key in keys-to-rem)
+                   (remhash key hash)))))))
 
 (defgeneric clear-cache (cache &optional args)
   (:documentation "Clears a given cache")
@@ -206,11 +265,7 @@
              (clrhash hash))
             ;; we need to sort out which keys to remove based on our name
             (shared-results?
-             (iter (for (key value) in-hashtable hash)
-               (when (eql name (first key))
-                 (collect key into keys-to-rem))
-               (finally (iter (for key in keys-to-rem)
-                          (remhash key hash)))))))))
+             (clear-cache-partial-arguments cache name))))))
 
 (defun do-caches (fn &key package)
   "Iterate through caches calling fn on each matching cache"

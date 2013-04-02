@@ -118,24 +118,67 @@
     (clear-cache *shared1-test-cache*)
     (shared0-test 1 2 3)
     (shared0-test 2 3 4)
-    (assert-eql 2 (hash-table-count *shared-cache*))
+    (assert-eql 2 (cached-results-count *shared-cache*))
     (clear-cache 'shared0-test)
-    (assert-eql 0 (hash-table-count *shared-cache*)
+    (assert-eql 0 (cached-results-count *shared-cache*)
                 :should-have-removed-the-final-entry
                 *shared-cache*)
     (shared0-test 1 2 3)
     (shared0-test 2 3 4)
     (shared1-test 1 2 3)
     (shared1-test 2 3 4)
-    (assert-eql 4 (hash-table-count *shared-cache*))
+    (assert-eql 4 (cached-results-count *shared-cache*))
     (clear-cache *shared1-test-cache*)
-    (assert-eql 2 (hash-table-count *shared-cache*))
+    (assert-eql 2 (cached-results-count *shared-cache*))
     (clear-cache *shared0-test-cache* (list 2 3 4))
-    (assert-eql 1 (hash-table-count *shared-cache*))
+    (assert-eql 1 (cached-results-count *shared-cache*))
     (clear-cache 'shared0-test)
-    (assert-eql 0 (hash-table-count *shared-cache*)
+    (assert-eql 0 (cached-results-count *shared-cache*)
                 :should-have-removed-the-final-entry
                 *shared-cache*)
+    ))
+
+(defvar *partial-clear-count* 0)
+(defcached partial-clearer (a b)
+  (incf *partial-clear-count*)
+  (+ a b))
+
+(define-test partial-clear-test
+  (let ((*partial-clear-count* 0))
+    (clear-cache *partial-clearer-cache*)
+    (partial-clearer 1 2)
+    (partial-clearer 1 2) ;; no side effect
+    (partial-clearer 1 3)
+    (partial-clearer 2 2)
+    (partial-clearer 2 3)
+    ;; check that our cache contains entries we expect and
+    ;; that we side effected 4 times
+    (assert-eql *partial-clear-count* 4)
+    (assert-eql 4 (cached-results-count *partial-clearer-cache*))
+
+    ;; remove all arg lists with 1 as the first arg
+    (clear-cache-partial-arguments
+     *partial-clearer-cache* 1)
+    (assert-eql 2 (cached-results-count *partial-clearer-cache*))
+
+    (partial-clearer 2 2);; no side effect
+    ;; we only have the entries that start with 2
+    (assert-eql 2 (cached-results-count *partial-clearer-cache*))
+    (assert-eql *partial-clear-count* 4) ;; 4 total side effects
+    (partial-clearer 1 2)
+    (partial-clearer 1 3);; re cache a 2 entries
+    (assert-eql *partial-clear-count* 6)
+    (assert-eql 4 (cached-results-count *partial-clearer-cache*))
+
+    (clear-cache-partial-arguments
+     *partial-clearer-cache* '(dont-care 2))
+    (assert-eql 2 (cached-results-count *partial-clearer-cache*))
+    (partial-clearer 1 3)
+    (assert-eql *partial-clear-count* 6)
+    (partial-clearer 1 2)
+    (assert-eql *partial-clear-count* 7)
+    (assert-eql 3 (cached-results-count *partial-clearer-cache*))
+
     ))
 
 (progn
@@ -191,15 +234,15 @@
     (assert-equal '(1 2 3) (purge-test 1 2 3))
     (assert-eql *purge-count* 1)
     (sleep 1.5)
-    (assert-equal 1 (hash-table-count (cached-results *purge-test-cache*)))
+    (assert-equal 1 (cached-results-count (cached-results *purge-test-cache*)))
     (purge-cache 'purge-test)
-    (assert-equal 0 (hash-table-count (cached-results *purge-test-cache*)))
+    (assert-equal 0 (cached-results-count (cached-results *purge-test-cache*)))
     (purge-test 1 2 3)
     (purge-test 1 2 3)
     (assert-equal '(1 2 3) (purge-test 1 2 3))
     (assert-eql *purge-count* 2)
     (sleep 1.5)
-    (assert-equal 1 (hash-table-count (cached-results *purge-test-cache*)))
+    (assert-equal 1 (cached-results-count (cached-results *purge-test-cache*)))
     (purge-cache *purge-test-cache*)
-    (assert-equal 0 (hash-table-count (cached-results *purge-test-cache*)))))
+    (assert-equal 0 (cached-results-count (cached-results *purge-test-cache*)))))
 

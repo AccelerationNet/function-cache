@@ -9,8 +9,12 @@
    #:compute-cache-key
    #:defcached-hashkey
    #:get-cached-value
+   #:dont-care
    #:clear-cache
    #:clear-all-caches
+   #:clear-cache-partial-arguments
+   #:cached-results-count
+   #:partial-argument-match?
    #:purge-cache
    #:purge-all-caches
    #:timeout
