@@ -5,6 +5,8 @@
 ;;;; refreshable caches (need to store actual args as well (instead of just
 ;;;; cache key), which has storage implications)
 
+(defvar *bypass-cache* nil)
+
 (defclass cache-capacity-mixin ()
   ((capacity
     :accessor capacity :initarg :capacity :initform nil
@@ -200,11 +202,13 @@
     the cached value")
   (:method ((cache function-cache) args
             &aux (cache-key (compute-cache-key cache args)))
-    (multiple-value-bind (cached-res cached-at)
-        (get-cached-value cache cache-key)
-      (if (or (null cached-at) (expired? cache cached-at))
-          (%insert-into-cache cache args)
-          (apply #'values cached-res)))))
+    (if *bypass-cache*
+        (apply (body-fn cache) args)
+        (multiple-value-bind (cached-res cached-at)
+            (get-cached-value cache cache-key)
+          (if (or (null cached-at) (expired? cache cached-at))
+              (%insert-into-cache cache args)
+              (apply #'values cached-res))))))
 
 (defvar *cache-names* nil
   "A list of all function-caches")
