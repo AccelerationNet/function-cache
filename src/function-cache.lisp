@@ -5,6 +5,14 @@
 ;;;; refreshable caches (need to store actual args as well (instead of just
 ;;;; cache key), which has storage implications)
 
+(defclass cache-capacity-mixin ()
+  ((capacity
+    :accessor capacity :initarg :capacity :initform nil
+    :documentation "The maximum number of objects cached, when we hit this we
+    will reduce the number of cached entries by reduce-by-ratio")
+   (reduce-by-ratio
+    :accessor reduce-by-ratio :initarg :reduce-by-ratio :initform .2
+    :documentation "Remove the oldest reduce-by-ratio entries (eg: .2 or 20%)")))
 
 (defclass function-cache ()
   ((cached-results :accessor cached-results :initform nil :initarg
@@ -14,7 +22,8 @@
    (name :accessor name :initform nil :initarg :name)
    (lambda-list :accessor lambda-list :initform nil :initarg :lambda-list)
    (shared-results? :accessor shared-results? :initform nil :initarg
-                    :shared-results?))
+                    :shared-results?)
+   )
   (:documentation "an object that contains the cached results of function calls
     the original function to be run, to set cached values
     and other cache configuration parameters.  This class is mostly intended
@@ -60,6 +69,10 @@
     :initform *default-hash-init-args*
     :initarg :hash-init-args))
   (:documentation "a function cache that uses a hash-table to store results"))
+
+(defclass hash-table-function-cache-with-capacity (cache-capacity-mixin hash-table-function-cache)
+  ()
+  (:documentation "a function cache that uses a hash-table to store results with a max capacity"))
 
 (defmethod initialize-instance :after
     ((cache function-cache) &key &allow-other-keys)
@@ -115,8 +128,34 @@
       (when (funcall (test cache) cache-key key)
         (values val cached-at)))))
 
+(defgeneric at-cache-capacity? (cache)
+  (:method (cache) nil)
+  (:method ((cache cache-capacity-mixin))
+    (and
+     (capacity cache)
+     (>= (cached-results-count cache)
+         (capacity cache)))))
+
+(defgeneric reduce-cached-set (cache)
+  (:method ((cache hash-table-function-cache))
+    ;; probably not super efficient and therefor probably likely to be a point of slowdown
+    ;; in code we are trying to make fast with caching, an LRU/MRU heap would be a better
+    ;; data structure for supporting this operation
+    (let ((ht (cached-results cache))
+          (number-to-remove (ceiling (* (capacity cache) (reduce-by-ratio cache)))))
+      (iter
+        (for i from 0 to number-to-remove)
+        (for (key . val) in
+             (sort
+              (alexandria:hash-table-alist ht)
+              #'<= :key #'cddr))
+        (remhash key ht)))))
+
 (defgeneric (setf get-cached-value) (new cache cache-key)
   (:documentation "Set the cached value for the cache key")
+  (:method :before (new (cache cache-capacity-mixin) cache-key)
+    (when (at-cache-capacity? cache)
+      (reduce-cached-set cache)))
   (:method (new (cache single-cell-function-cache) cache-key)
     (setf (cached-results cache)
           (cons cache-key (cons new (get-universal-time)))))

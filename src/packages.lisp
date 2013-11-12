@@ -21,7 +21,13 @@
    #:cached-results
    #:clear-cache-all-function-caches
    #:*cache-names*
+   #:cache-capacity-mixin
+   #:at-cache-capacity?
+   #:capacity
+   #:reduce-by-ratio
+   #:reduce-cached-set
    #:hash-table-function-cache
+   #:hash-table-function-cache-with-capacity
    #:single-cell-function-cache
    #:thunk-cache
    ))
