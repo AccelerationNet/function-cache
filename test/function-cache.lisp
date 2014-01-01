@@ -1,17 +1,11 @@
 (in-package :function-cache-test)
 
-(defun run-all-tests (&optional (use-debugger t))
-  (let ((lisp-unit:*print-failures* t)
-        (lisp-unit:*print-errors* t)
-        (lisp-unit::*use-debugger* use-debugger))
-   (run-tests :all)))
-
 (defvar *thunk-test-count* 0)
 (defcached thunk-tester ()
   (incf *thunk-test-count*)
   7)
 
-(define-test thunk-1
+(define-test thunk-1 ()
   (let ((*thunk-test-count* 0))
     (clear-cache *thunk-tester-cache*)
     (thunk-tester)
@@ -27,7 +21,7 @@
   (incf *single-cell-test-count*)
   a)
 
-(define-test single-cell-test
+(define-test single-cell-test ()
   (let ((*single-cell-test-count* 0))
     (clear-cache *single-cell-tester-cache*)
     (single-cell-tester 2)
@@ -43,7 +37,7 @@
   (incf *hash-test-count*)
   a0)
 
-(define-test fn0-test
+(define-test fn0-test ()
   (let ((*hash-test-count* 0))
     (clear-cache *fn0-cache*)
     (fn0 1)
@@ -59,7 +53,7 @@
   (incf *hash-test-count*)
   (list a b c))
 
-(define-test fn1-test
+(define-test fn1-test ()
   (let ((*hash-test-count* 0))
     (clear-cache *fn1-cache*)
     (fn1 1 :b 2)
@@ -89,7 +83,7 @@
     (incf *shared1-count*)
     (cons a them)))
 
-(define-test shared-test
+(define-test shared-test ()
   (let ((*shared-count* 0)
         (*shared0-count* 0)
         (*shared1-count* 0))
@@ -110,7 +104,7 @@
     (assert-eql 2 *shared-count*)
     ))
 
-(define-test shared-clear-test
+(define-test shared-clear-test ()
   (let ((*shared-count* 0)
         (*shared0-count* 0)
         (*shared1-count* 0))
@@ -143,7 +137,7 @@
   (incf *partial-clear-count*)
   (+ a b))
 
-(define-test partial-clear-test
+(define-test partial-clear-test ()
   (let ((*partial-clear-count* 0))
     (clear-cache *partial-clearer-cache*)
     (partial-clearer 1 2)
@@ -199,7 +193,7 @@
     (incf *opt1-count*)
     (cons a them)))
 
-(define-test optional-shared-test
+(define-test optional-shared-test ()
   (let ((*opt-count* 0)
         (*opt0-count* 0)
         (*opt1-count* 0))
@@ -223,26 +217,26 @@
     ))
 
 (defparameter *purge-count* 0)
-(defcached (purge-test :timeout 1) (&rest them)
+(defcached (purge-fn :timeout 1) (&rest them)
   (incf *purge-count*)
   them)
 
-(define-test purge-test
+(define-test purge-test ()
   (let ((*purge-count* 0))
-    (clear-cache 'purge-test)
-    (purge-test 1 2 3)
-    (assert-equal '(1 2 3) (purge-test 1 2 3))
+    (clear-cache 'purge-fn)
+    (purge-fn 1 2 3)
+    (assert-equal '(1 2 3) (purge-fn 1 2 3))
     (assert-eql *purge-count* 1)
     (sleep 1.5)
-    (assert-equal 1 (cached-results-count (cached-results *purge-test-cache*)))
-    (purge-cache 'purge-test)
-    (assert-equal 0 (cached-results-count (cached-results *purge-test-cache*)))
-    (purge-test 1 2 3)
-    (purge-test 1 2 3)
-    (assert-equal '(1 2 3) (purge-test 1 2 3))
+    (assert-equal 1 (cached-results-count (cached-results *purge-fn-cache*)))
+    (purge-cache 'purge-fn)
+    (assert-equal 0 (cached-results-count (cached-results *purge-fn-cache*)))
+    (purge-fn 1 2 3)
+    (purge-fn 1 2 3)
+    (assert-equal '(1 2 3) (purge-fn 1 2 3))
     (assert-eql *purge-count* 2)
     (sleep 1.5)
-    (assert-equal 1 (cached-results-count (cached-results *purge-test-cache*)))
-    (purge-cache *purge-test-cache*)
-    (assert-equal 0 (cached-results-count (cached-results *purge-test-cache*)))))
+    (assert-equal 1 (cached-results-count (cached-results *purge-fn-cache*)))
+    (purge-cache *purge-fn-cache*)
+    (assert-equal 0 (cached-results-count (cached-results *purge-fn-cache*)))))
 

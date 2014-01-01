@@ -20,12 +20,21 @@
 
 (asdf:defsystem function-cache-test
   :description "the part of adwcode"
-  :depends-on (:function-cache :lisp-unit)
+  :depends-on (:function-cache :lisp-unit2)
   :components ((:module :test
                         :serial T
                         :components
                         ((:file "packages")
                          (:file "function-cache")))))
+
+(defmethod asdf:perform ((o asdf:test-op) (c (eql (find-system :function-cache))))
+  (asdf:oos 'asdf:load-op :function-cache-test)
+  (let ((*package* (find-package :function-cache-test)))
+    (eval (read-from-string "
+             (run-tests :package :function-cache-test
+                        :name :function-cache
+                        :run-contexts #'with-summary-context)
+      "))))
 
 ;; Copyright (c) 2013 Russ Tyndall , Acceleration.net
 ;; http://www.acceleration.net All rights reserved.
