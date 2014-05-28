@@ -160,17 +160,20 @@
       (reduce-cached-set cache)))
   (:method (new (cache single-cell-function-cache) cache-key)
     (setf (cached-results cache)
-          (cons cache-key (cons new (get-universal-time)))))
+          (cons cache-key (cons new (get-universal-time))))
+    new)
   (:method (new (cache hash-table-function-cache) cache-key)
     ;; without our shared hash, we cannot cache
     (let ((hash (cached-results cache)))
       (when hash
         (setf (gethash cache-key hash)
-              (cons new (get-universal-time))))))
+              (cons new (get-universal-time)))))
+    new)
   (:method (new (cache thunk-cache) cache-key)
     (declare (ignore cache-key))
     (setf (cached-results cache)
-          (cons new (get-universal-time)))))
+          (cons new (get-universal-time)))
+    new))
 
 (defgeneric defcached-hashkey (thing)
   (:documentation "Turns a list of arguments into a valid cache-key
