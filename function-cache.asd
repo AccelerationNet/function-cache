@@ -15,8 +15,17 @@
               :serial T
               :components
               ((:file "packages")
-               (:file "function-cache")
+               (:file "protocol")
+               ;; mixins
+               (:file "capacity")
                (:file "metering")
+               ;; cachers
+               (:file "function-cache")
+               (:file "thunk")
+               (:file "single-cell")
+               (:file "hash-table")
+               ;; driver
+               (:file "cache")
                )))
     :depends-on (:alexandria :cl-interpol :iterate :symbol-munger))
 

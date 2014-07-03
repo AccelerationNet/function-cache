@@ -5,6 +5,7 @@
   (:use :common-lisp :iterate)
   (:shadowing-import-from :alexandria :ensure-list )
   (:export
+   #:*default-cache-class*
    #:*bypass-cache*
    #:defcached
    #:compute-cache-key

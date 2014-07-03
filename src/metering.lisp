@@ -18,7 +18,7 @@
 (defun hit-ratio (cache)
   (/ (hits cache) (accesses cache)))
 
-(defmethod clear-cache ((cache metered-mixin) &optional args)
+(defmethod clear-cache :around ((cache metered-mixin) &optional args)
   (declare (ignore args))
   (setf (hits cache) 0
         (misses cache) 0)
