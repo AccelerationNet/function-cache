@@ -15,7 +15,9 @@
               :serial T
               :components
               ((:file "packages")
-               (:file "function-cache"))))
+               (:file "function-cache")
+               (:file "metering")
+               )))
     :depends-on (:alexandria :cl-interpol :iterate :symbol-munger))
 
 (asdf:defsystem function-cache-test
@@ -25,7 +27,8 @@
                         :serial T
                         :components
                         ((:file "packages")
-                         (:file "function-cache")))))
+                         (:file "function-cache")
+                         (:file "metering")))))
 
 (defmethod asdf:perform ((o asdf:test-op) (c (eql (find-system :function-cache))))
   (asdf:oos 'asdf:load-op :function-cache-test)

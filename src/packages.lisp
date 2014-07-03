@@ -31,4 +31,10 @@
    #:hash-table-function-cache-with-capacity
    #:single-cell-function-cache
    #:thunk-cache
+   ;; metering symbols
+   #:metered-mixin
+   #:hits
+   #:misses
+   #:hit-ratio
+   #:accesses
    ))
