@@ -1,5 +1,25 @@
 (in-package :function-cache)
 
+(defvar *cache* ())
+(defvar *cached-at* ())
+
+(define-condition cache-value-condition ()
+  ((cache :accessor cache :initarg :cache :initform nil)
+   (key :accessor key :initarg :key :initform nil)
+   (value :accessor value :initarg :value :initform nil)
+   (cached-at :accessor cached-at :initarg :cached-at :initform nil)))
+
+(define-condition cached-a-value (cache-value-condition)
+  ())
+
+(define-condition removed-a-value (cache-value-condition)
+  ((removed-at :accessor removed-at
+               :initarg :removed-at
+               :initform (get-universal-time))))
+
+(define-condition expired-a-value (removed-a-value)
+  ())
+
 (defgeneric clear-cache (cache &optional args)
   (:documentation "Clears a given cache"))
 
@@ -11,7 +31,15 @@
   (:documentation "returns the result-values-list and at what time it was cached"))
 
 (defgeneric (setf get-cached-value) (new cache cache-key)
-  (:documentation "Set the cached value for the cache key"))
+  (:documentation "Set the cached value for the cache key")
+  (:method :around (new cache cache-key)
+    (let ((*cache* cache)
+          (*cached-at* (get-universal-time)))
+      (with-simple-restart (abort "Skip caching this value")
+        (signal 'cached-a-value
+                :cache cache :key cache-key :value new
+                :cached-at *cached-at*)
+        (call-next-method)))))
 
 (defgeneric at-cache-capacity? (cache)
   (:documentation "is the cache full?")
@@ -23,6 +51,7 @@
 (defgeneric cached-results-count (cache)
   (:documentation "A function to compute the number of results that have been
   cached. DOES NOT CHECK to see if the entries are expired")
+  (:method ((x null)) 0)
   (:method ((res list)) (length res))
   (:method ((res hash-table)) (hash-table-count res)))
 

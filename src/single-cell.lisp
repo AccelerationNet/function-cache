@@ -21,7 +21,7 @@
 
 (defmethod (setf get-cached-value) (new (cache single-cell-function-cache) cache-key)
   (setf (cached-results cache)
-        (cons cache-key (cons new (get-universal-time))))
+        (cons cache-key (cons new *cached-at*)))
   new)
 
 (defmethod purge-cache ((cache single-cell-function-cache))

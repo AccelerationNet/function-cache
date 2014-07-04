@@ -15,8 +15,10 @@
 (defmethod make-cache-backing ((cache hash-table-function-cache))
   (apply #'make-hash-table (hash-init-args cache)))
 
-(defmethod cached-results-count ((cache hash-table-function-cache))
-  (hash-table-count (cached-results cache)))
+(defmethod cached-results-count ((cache hash-table-function-cache)
+                                 &aux (cached (cached-results cache)))
+  (when cached
+    (hash-table-count cached)))
 
 (defmethod get-cached-value ((cache hash-table-function-cache) cache-key)
   ;; if we get no hash when we expect one then it probably means that we
@@ -32,7 +34,7 @@
   ;; without our shared hash, we cannot cache
   (let ((hash (cached-results cache)))
     (when hash (setf (gethash cache-key hash)
-                     (cons new (get-universal-time)))))
+                     (cons new *cached-at*))))
   new)
 
 (defgeneric partial-argument-match? (cache cached-key to-match

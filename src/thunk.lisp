@@ -14,11 +14,11 @@
 (defmethod (setf get-cached-value) (new (cache thunk-cache) cache-key)
   (declare (ignore cache-key))
   (setf (cached-results cache)
-        (cons new (get-universal-time)))
+        (cons new *cached-at*))
   new)
 
 (defmethod cached-results-count ((cache thunk-cache))
-  (if (cddr (cached-results cache)) 1 0))
+  (if (cdr (cached-results cache)) 1 0))
 
 (defmethod purge-cache ((cache thunk-cache))
   (let ((cached-at (cdr (cached-results cache))))

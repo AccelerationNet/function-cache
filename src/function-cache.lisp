@@ -81,6 +81,13 @@
         (apply (body-fn cache) args)
         (multiple-value-bind (cached-res cached-at)
             (get-cached-value cache cache-key)
-          (if (or (null cached-at) (expired? cache cached-at))
-              (%insert-into-cache cache args)
-              (apply #'values cached-res))))))
+          (cond
+            ((null cached-at)
+             (%insert-into-cache cache args))
+            ((expired? cache cached-at)
+             (with-simple-restart (abort "Skip expiring this value")
+               (signal 'expired-a-value
+                       :cache cache :key cache-key :value cached-res
+                       :cached-at cached-at)
+               (%insert-into-cache cache args)))
+            (t (apply #'values cached-res)))))))
