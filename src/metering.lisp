@@ -18,12 +18,6 @@
 (defun hit-ratio (cache)
   (/ (hits cache) (accesses cache)))
 
-(defmethod clear-cache :around ((cache metered-mixin) &optional args)
-  (declare (ignore args))
-  (setf (hits cache) 0
-        (misses cache) 0)
-  (call-next-method))
-
 (defmethod get-cached-value :around ((cache metered-mixin) cache-key)
   (multiple-value-bind (res at) (call-next-method)
     (if (or (null at) (expired? cache at))
