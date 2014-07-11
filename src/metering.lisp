@@ -25,3 +25,51 @@
         (incf (hits cache)))
     (values res at)))
 
+(defun incf-hash (key ht &optional (delta 1) (default 0))  
+  (let* ((c (gethash key ht default)))
+    (setf (gethash key ht) (+ c delta))))
+
+(defun get-cached-object-stats
+    (cache &aux
+           (type-counts (make-hash-table))
+           (cycles (make-hash-table))
+           (res (cached-results cache)))
+  (labels ((basic-type (v)
+             (typecase v
+               (null 'null)
+               (string 'string)
+               (number 'number)
+               (cons 'cons)
+               (hash-table 'hash-table)
+               (array 'array)
+               (standard-object 'standard-object)))
+           (cycle-check? (v &aux (cnt (incf-hash v cycles 1 -1)))
+             (when (= 1 cnt)
+               (push v (gethash :cycle-objects  type-counts)))
+             (plusp cnt))
+           (categorize-value (v)
+             (let* ((type (basic-type v)))
+               (incf-hash type type-counts 1)
+               (unless (or (member type '(number null))
+                           (cycle-check? v))
+                 (case type
+                   (string
+                    (incf-hash :string-length type-counts (length v)))
+                   (cons      ;; handle cons cells and lists                  
+                    (categorize-value (car v))
+                    (when (cdr v) (categorize-value (cdr v))))
+                   (array                    
+                    (map nil #'categorize-value v))
+                   (hash-table
+                    (incf-hash :hash-table-count type-counts (hash-table-count v))
+                    (iter (for (k v) in-hashtable v)
+                      (categorize-value v)))
+                   (standard-object                    
+                    (iter (for sd in (closer-mop:class-slots (class-of v)))
+                      (for sn = (closer-mop:slot-definition-name sd))
+                      (categorize-value (ignore-errors (slot-value v sn))))))))))
+    (categorize-value res)
+    (list*
+     :cycles (iter (for (k v) in-hashtable cycles)
+               (summing v))
+     (alexandria:hash-table-plist type-counts))))

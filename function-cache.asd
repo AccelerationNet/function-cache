@@ -27,7 +27,7 @@
                ;; driver
                (:file "cache")
                )))
-    :depends-on (:alexandria :cl-interpol :iterate :symbol-munger))
+    :depends-on (:alexandria :cl-interpol :iterate :symbol-munger :closer-mop))
 
 (asdf:defsystem function-cache-test
   :description "the part of adwcode"
