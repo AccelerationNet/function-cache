@@ -32,6 +32,7 @@
    #:hash-table-function-cache-with-capacity
    #:single-cell-function-cache
    #:thunk-cache
+   #:find-function-cache-for-name
    ;; metering symbols
    #:metered-mixin
    #:hits

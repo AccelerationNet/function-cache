@@ -19,8 +19,10 @@ based on arguments (an expanded form of memoization).
 ### DEFCACHED 
 
 Creates a cached function named SYMBOL and a cache object named `*{FN-NAME}-CACHE*`
-SYMBOL can also be a list (FN-NAME &rest cache-init-args
-                           &key CACHE-CLASS TABLE TIMEOUT SHARED-RESULTS?)
+SYMBOL can also be a list
+
+`(FN-NAME &rest cache-init-args
+   &key CACHE-CLASS TABLE TIMEOUT SHARED-RESULTS?)`
 
  * CACHE-CLASS - controls what cache class will be instantiated (uses
    default-cache-class if not provided)
@@ -46,6 +48,14 @@ EG:
 (foo 3) ;; waits 3s then returns 3
 (foo 1) ;; has timedout, waits 3s then returns 1
 ```
+
+#### Cache-objects and Names
+
+Each cached function will have a cache object associated with it in
+special-variable `*{FN-NAME}-CACHE*`.  You can find a cache object for
+a function name using `find-function-cache-for-name` if necessary.  In
+most of the api, a function-name or a cache-object should be
+interchangable.
 
 ### function-cache, thunk-cache, hash-table-function-cache, single-cell-function-cache
 
@@ -78,7 +88,9 @@ them to be garbage collected
 
 ### clear-cache, clear-all-caches
 
-A function that will remove all cached results from the cache
+A function that will remove all cached results from the cache.  
+
+`clear-cache` accepts either a cache or the name of a cached function
 
 #### clear-cache-partial-arguments
 
