@@ -41,7 +41,7 @@
                (number 'number)
                (cons 'cons)
                (hash-table 'hash-table)
-               (array 'array)
+               (vector 'vector)
                (standard-object 'standard-object)))
            (cycle-check? (v &aux (cnt (incf-hash v cycles 1 -1)))
              (when (= 1 cnt)
@@ -58,7 +58,7 @@
                    (cons      ;; handle cons cells and lists                  
                     (categorize-value (car v))
                     (when (cdr v) (categorize-value (cdr v))))
-                   (array                    
+                   (vector
                     (map nil #'categorize-value v))
                    (hash-table
                     (incf-hash :hash-table-count type-counts (hash-table-count v))
