@@ -37,6 +37,10 @@
                      (cons new *cached-at*))))
   new)
 
+(defmethod key-cached? ((cache hash-table-function-cache) cache-key)
+  (let* ((hash (cached-results cache)))
+    (nth-value 1 (gethash cache-key hash))))
+
 (defgeneric partial-argument-match? (cache cached-key to-match
                                      &key test)
   (:documentation "Trys to see if the cache-key matches the to-match partial
@@ -112,7 +116,7 @@
 (defmethod reduce-cached-set ((cache hash-table-function-cache) n)
   ;; probably not super efficient and therefor probably likely to be a point
   ;; of slowdown in code we are trying to make fast with caching, an LRU/MRU
-  ;; heap would be a better data structure for supporting this operation  
+  ;; heap would be a better data structure for supporting this operation
   (iter
     (with ht = (cached-results cache))
     (for i from 0 to n)

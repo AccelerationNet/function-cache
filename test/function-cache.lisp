@@ -65,6 +65,42 @@
     (assert-equal '(1 2 3) (fn1 1 :b 2 :c 3))
     (assert-eql 4 *hash-test-count*)))
 
+(defvar *lru-test-count* 0)
+(defcached (lru-tester :cache-class lru-cache :capacity 2) (a0)
+  (incf *lru-test-count*)
+  a0)
+
+(define-test lru-test ()
+  (let ((*lru-test-count* 0))
+    (clear-cache *lru-tester-cache*)
+    (lru-tester 1)
+    (lru-tester 2)
+    (lru-tester 1)
+    (assert-eql 2 *lru-test-count*)
+    (lru-tester 3)
+    (assert-eql 3 *lru-test-count*)
+    (lru-tester 2)
+    (lru-tester 3)
+    (assert-eql 4 *lru-test-count*)))
+
+(defvar *mru-test-count* 0)
+(defcached (mru-tester :cache-class mru-cache :capacity 2) (a0)
+  (incf *mru-test-count*)
+  a0)
+
+(define-test mru-test ()
+  (let ((*mru-test-count* 0))
+    (clear-cache *mru-tester-cache*)
+    (mru-tester 1)
+    (mru-tester 2)
+    (mru-tester 1)
+    (assert-eql 2 *mru-test-count*)
+    (mru-tester 3)
+    (assert-eql 3 *mru-test-count*)
+    (mru-tester 2)
+    (mru-tester 3)
+    (mru-tester 1)
+    (assert-eql 4 *mru-test-count*)))
 
 (progn
   (defparameter *shared-cache* (make-hash-table :test 'equal :synchronized t))
@@ -239,4 +275,3 @@
     (assert-equal 1 (cached-results-count (cached-results *purge-fn-cache*)))
     (purge-cache *purge-fn-cache*)
     (assert-equal 0 (cached-results-count (cached-results *purge-fn-cache*)))))
-

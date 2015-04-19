@@ -11,6 +11,7 @@
    #:compute-cache-key
    #:defcached-hashkey
    #:get-cached-value
+   #:key-cached?
    #:dont-care
    #:clear-cache
    #:clear-all-caches
@@ -30,6 +31,8 @@
    #:reduce-cached-set
    #:hash-table-function-cache
    #:hash-table-function-cache-with-capacity
+   #:lru-cache
+   #:mru-cache
    #:single-cell-function-cache
    #:thunk-cache
    #:find-function-cache-for-name

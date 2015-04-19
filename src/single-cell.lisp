@@ -29,3 +29,7 @@
          (cached-at (cddr res)))
     (when (expired? cache cached-at)
       (clear-cache cache))))
+
+(defmethod key-cached? ((cache single-cell-function-cache) cache-key)
+  (let ((key (car (cached-results cache))))
+    (funcall (test cache) cache-key key)))

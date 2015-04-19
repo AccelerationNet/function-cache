@@ -24,3 +24,7 @@
   (let ((cached-at (cdr (cached-results cache))))
     (when (expired? cache cached-at)
       (clear-cache cache))))
+
+(defmethod key-cached? ((cache thunk-cache) cache-key)
+  (declare (ignore cache-key))
+  t)

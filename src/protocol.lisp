@@ -41,6 +41,12 @@
                 :cached-at *cached-at*)
         (call-next-method)))))
 
+(defgeneric key-cached? (cache cache-key)
+  (:documentation "Check if the cache contains a cached value for the key.
+This should not have any side affects, even if GET-CACHED-VALUE does (for instance in an LRU cache).
+Return non-nil if the cache contains an entry with the specified key.")
+  (:method (cache key) nil))
+
 (defgeneric at-cache-capacity? (cache)
   (:documentation "is the cache full?")
   (:method (cache) nil))
