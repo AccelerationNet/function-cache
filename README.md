@@ -1,4 +1,4 @@
-# function-cache 
+# function-cache
 
 A common lisp library that provides extensible function result caching
 based on arguments (an expanded form of memoization).
@@ -16,7 +16,7 @@ based on arguments (an expanded form of memoization).
 
 ## API
 
-### DEFCACHED 
+### DEFCACHED
 
 Creates a cached function named SYMBOL and a cache object named `*{FN-NAME}-CACHE*`
 SYMBOL can also be a list
@@ -59,12 +59,12 @@ interchangable.
 
 ### function-cache, thunk-cache, hash-table-function-cache, single-cell-function-cache
 
-The basic types of function-caches currently provided.  
+The basic types of function-caches currently provided.
  * Function-cache - abstract class for all function-caches
  * thunk-cache - a cache specialized for storing the results of thunks
   * automatically chosen, for functions of 0 args
  * hash-table-function-cache
-  * A hash-table backed function-cache, supports shared hash-tables, but defaults 
+  * A hash-table backed function-cache, supports shared hash-tables, but defaults
     to a unique hash-table for each cache
   * Supports dynamically available caching (eg: web-request contexts),
     by setting cache-results to a function or symbol that will
@@ -72,6 +72,16 @@ The basic types of function-caches currently provided.
     caching is bypassed for that call
  * single-cell-function-cache
   * caches the single most recently used call
+ * lru-cache
+  * A cache with a fixed capacity
+  * Backed by a combination of a hash table and doubly-linked list
+  * When the maximimum capacity is reached the least recently used cache
+    entries are deleted.
+ * mru-cache
+  * A cache with a fixed capacity
+  * Backed by a combination of a hash table and doubly-linked list
+  * When the maximum capacity is reached the most recently used cache
+    entries are deleted.
 
 ### get-cached-value, (setf get-cached-value)
 
@@ -88,7 +98,7 @@ them to be garbage collected
 
 ### clear-cache, clear-all-caches
 
-A function that will remove all cached results from the cache.  
+A function that will remove all cached results from the cache.
 
 `clear-cache` accepts either a cache or the name of a cached function
 
@@ -121,7 +131,7 @@ Compute-cache-key, takes a cache and a list of arguments and turns
 those into a valid cache-key for the cache, by calling
 defcached-hashkey recursively through the argument tree.
 
-Shared cache-backings will ensure the function name is the first token 
+Shared cache-backings will ensure the function name is the first token
 in this cache-key
 
 ### cacher
