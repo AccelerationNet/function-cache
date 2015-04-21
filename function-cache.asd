@@ -24,6 +24,7 @@
                (:file "thunk")
                (:file "single-cell")
                (:file "hash-table")
+               (:file "ordered")
                ;; driver
                (:file "cache")
                )))

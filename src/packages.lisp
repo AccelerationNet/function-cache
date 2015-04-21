@@ -30,6 +30,8 @@
    #:reduce-cached-set
    #:hash-table-function-cache
    #:hash-table-function-cache-with-capacity
+   #:lru-cache
+   #:mru-cache
    #:single-cell-function-cache
    #:thunk-cache
    #:find-function-cache-for-name
