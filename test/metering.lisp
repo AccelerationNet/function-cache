@@ -7,6 +7,7 @@
   a)
 
 (define-test metered-test ()
+  (function-cache:reset-counters 'test-metered)
   (clear-cache 'test-metered)
   (assert-eq 0 (hits *TEST-METERED-CACHE*))
   (assert-eq 0 (misses *TEST-METERED-CACHE*))
@@ -21,10 +22,10 @@
   )
 
 (define-test clearing-resets-meters ()
-  (clear-cache 'test-metered)
+  (function-cache:reset-counters 'test-metered)
   (assert-eq 0 (hits *TEST-METERED-CACHE*))
   (assert-eq 0 (misses *TEST-METERED-CACHE*))
-  (test-metered 0)
-  (clear-cache 'test-metered)
+  (test-metered 1)
+  (function-cache:reset-counters 'test-metered)
   (assert-eq 0 (hits *TEST-METERED-CACHE*))
   (assert-eq 0 (misses *TEST-METERED-CACHE*)))

@@ -40,5 +40,6 @@
    #:hits
    #:misses
    #:hit-ratio
+   #:reset-counters
    #:accesses
    ))

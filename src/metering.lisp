@@ -73,3 +73,11 @@
      :cycles (iter (for (k v) in-hashtable cycles)
                (summing v))
      (alexandria:hash-table-plist type-counts))))
+
+(defgeneric reset-counters (cache)
+  (:documentation "When we clear the full cache, reset the counters")
+  (:method ((cache symbol))
+    (reset-counters (find-function-cache-for-name cache)))
+  (:method ((cache metered-mixin))
+    (setf (hits cache) 0
+          (misses cache) 0)))
