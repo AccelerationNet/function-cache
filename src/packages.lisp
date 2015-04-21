@@ -11,7 +11,6 @@
    #:compute-cache-key
    #:defcached-hashkey
    #:get-cached-value
-   #:key-cached?
    #:dont-care
    #:clear-cache
    #:clear-all-caches

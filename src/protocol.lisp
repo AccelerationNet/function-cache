@@ -44,7 +44,9 @@
 (defgeneric key-cached? (cache cache-key)
   (:documentation "Check if the cache contains a cached value for the key.
 This should not have any side affects, even if GET-CACHED-VALUE does (for instance in an LRU cache).
-Return non-nil if the cache contains an entry with the specified key.")
+Return non-nil if the cache contains an entry with the specified key.
+
+Note that this returns non-nil if the key is cached but expired.")
   (:method (cache key) nil))
 
 (defgeneric at-cache-capacity? (cache)
