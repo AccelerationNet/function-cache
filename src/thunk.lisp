@@ -27,4 +27,4 @@
 
 (defmethod key-cached? ((cache thunk-cache) cache-key)
   (declare (ignore cache-key))
-  t)
+  (cdr (cached-results cache)))
