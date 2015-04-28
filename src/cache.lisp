@@ -20,8 +20,14 @@
               (eql (name obj) cache-name)) ;; check the fn name
       (return obj))))
 
+(defmethod clear-cache ((cache-name null) &optional args)
+  (declare (ignore cache-name args))
+  nil)
+
 (defmethod clear-cache ((cache-name symbol) &optional (args nil args-input?))
   (let ((obj (find-function-cache-for-name cache-name)))
+    (unless obj
+      (error "Couldnt find cache with name ~A" cache-name))
     ;; only call with args if we called this with args
     ;; otherwise there is no determination between (eg: &rest called with nil args
     ;; and not calling with args)
