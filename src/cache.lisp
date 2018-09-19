@@ -120,7 +120,9 @@
           (cacher ,cache ,call-list))
         (setf ,cache
          (make-instance ',cache-class
-          :body-fn (lambda ,lambda-list ,@body)
+          :body-fn (lambda ,lambda-list
+                     (block ,fn-name
+                       (block nil ,@body)))
           :name ',fn-name
           :lambda-list ',lambda-list
           :shared-results? ,shared-results?
