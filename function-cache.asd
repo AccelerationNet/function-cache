@@ -9,7 +9,7 @@
     :description "A Simple Caching Layer for functions"
     :author "Acceleration.net <programmers@acceleration.net>"
     :licence "BSD"
-    :version "1.0.1"
+    :version "1.0.2"
     :components
     ((:module :src
               :serial T
