@@ -110,17 +110,27 @@
     (when (and table (not shared-result-input?))  (setf shared-results? t))
     (let* ((cache-class (default-cache-class symbol lambda-list))
            (cache (symbol-munger:english->lisp-symbol #?"*${ fn-name }-cache*"))
-           (doc (when (stringp (first body)) (first body)))
-           (call-list (%call-list-for-lambda-list lambda-list)))
+           (call-list (%call-list-for-lambda-list lambda-list))
+           doc declares)
+      (when (stringp (first body))
+        (setf doc (first body)
+              body (rest body)))
+      (iter (while (eql 'declare (first (first body))))
+            (collect (first body) into decs)
+            (setf body (rest body))
+            (finally (setf declares decs)))
+
       `(progn
         (defvar ,cache nil)
         (pushnew ',cache *cache-names*)
         (defun ,fn-name ,lambda-list
-          ,doc
+          ,@(ensure-list doc)
           (cacher ,cache ,call-list))
         (setf ,cache
          (make-instance ',cache-class
           :body-fn (lambda ,lambda-list
+                     ,@(ensure-list doc)
+                     ,@declares
                      (block ,fn-name
                        (block nil ,@body)))
           :name ',fn-name
