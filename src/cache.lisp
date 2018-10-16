@@ -112,10 +112,12 @@
            (cache (symbol-munger:english->lisp-symbol #?"*${ fn-name }-cache*"))
            (call-list (%call-list-for-lambda-list lambda-list))
            doc declares)
+
       (when (stringp (first body))
         (setf doc (first body)
               body (rest body)))
-      (iter (while (eql 'declare (first (first body))))
+      (iter (while (and (listp (first body))
+                        (eql 'declare (first (first body)))))
             (collect (first body) into decs)
             (setf body (rest body))
             (finally (setf declares decs)))

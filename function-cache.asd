@@ -9,7 +9,7 @@
     :description "A Simple Caching Layer for functions"
     :author "Acceleration.net <programmers@acceleration.net>"
     :licence "BSD"
-    :version "1.0.2"
+    :version "1.0.3"
     :components
     ((:module :src
               :serial T
@@ -30,8 +30,9 @@
                )))
     :depends-on (:alexandria :cl-interpol :iterate :symbol-munger :closer-mop))
 
-(asdf:defsystem function-cache-test
+(asdf:defsystem function-cache/test
   :description "the part of adwcode"
+  :version "1.0.3"
   :depends-on (:function-cache :lisp-unit2)
   :components ((:module :test
                         :serial T
@@ -41,7 +42,7 @@
                          (:file "metering")))))
 
 (defmethod asdf:perform ((o asdf:test-op) (c (eql (find-system :function-cache))))
-  (asdf:oos 'asdf:load-op :function-cache-test)
+  (asdf:oos 'asdf:load-op :function-cache/test)
   (let ((*package* (find-package :function-cache-test)))
     (eval (read-from-string "
              (run-tests :package :function-cache-test
