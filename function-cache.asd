@@ -31,7 +31,7 @@
     :depends-on (:alexandria :cl-interpol :iterate :symbol-munger :closer-mop))
 
 (asdf:defsystem function-cache/test
-  :description "the part of adwcode"
+  :description "tests for function cache"
   :version "1.0.3"
   :depends-on (:function-cache :lisp-unit2)
   :components ((:module :test
