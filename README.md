@@ -96,7 +96,7 @@ the underlying function.
 A function that will remove expired entries from the cache, allowing
 them to be garbage collected
 
-### clear-cache, clear-all-caches
+### clear-cache, clear-cache-all-function-caches
 
 A function that will remove all cached results from the cache.
 
