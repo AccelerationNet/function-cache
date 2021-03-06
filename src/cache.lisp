@@ -38,10 +38,14 @@
 (defmethod purge-cache ((cache-name symbol))
   (purge-cache (find-function-cache-for-name cache-name)))
 
-(defun clear-cache-all-function-caches (&optional package)
+(defun clear-all-caches (&optional package)
   "Clear all the packages we know about. If there is a package mentioned,
    clear only those caches whose names are in that package"
   (do-caches #'clear-cache :package package))
+
+(defun clear-cache-all-function-caches (&optional package)
+  (warn "Function clear-cache-all-function-caches deprecated. Use clear-all-caches instead.")
+  (clear-all-caches package))
 
 (defun purge-all-caches (&optional package)
   "Call purge on all matching cache objects.  If package is provided, purge
